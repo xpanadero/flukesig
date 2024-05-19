@@ -6,6 +6,7 @@
 #
 
 """Fluke 9010a checksum tool."""
+from __future__ import print_function
 
 import sys
 import zipfile
@@ -18,6 +19,11 @@ from os.path import basename
 
 BLOCK_SIZE = 1024               # Read this many bytes at a time
 
+VERSION = float("{}.{}".format(sys.version_info.major, sys.version_info.minor))
+
+if VERSION >= 3.0:
+    from functools import reduce
+    xrange = range
 
 def readbytes(inp):
     """Return an array of bytes read from inp."""
@@ -25,7 +31,10 @@ def readbytes(inp):
     done = False
     while not done:
         temp = inp.read(BLOCK_SIZE)
-        buf.fromstring(temp)
+        if VERSION < 3.0:
+            buf.fromstring(temp)
+        else:
+            buf.frombytes(temp)
         done = len(temp) < BLOCK_SIZE
     return buf
 
@@ -109,9 +118,7 @@ def main(argv):
     parser = get_parser()
     (opts, args) = parser.parse_args(argv)
     for (inpf, fd) in chain.from_iterable(gen_fds(args, opts.no_unzip)):
-        print "%s %04x" % (basename(inpf) if opts.short else inpf,
-                           checksum(fd))
-
-
+        print("%s %04x" % (basename(inpf) if opts.short else inpf,
+                           checksum(fd)))
 if __name__ == '__main__':
     main(sys.argv[1:])
